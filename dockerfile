@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y maven && \
     apt-get clean
 
-WORKDIR /app
+WORKDIR /
 
 # Copy pom.xml and download dependencies first (for caching)
 COPY pom.xml .
