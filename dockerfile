@@ -1,18 +1,33 @@
-# Use official Maven image with JDK 21 for building the project
-FROM maven:3-openjdk-21 AS build
+# Build stage: Use OpenJDK 21 base image and install Maven manually
+FROM eclipse-temurin:21-jdk AS build
 
-WORKDIR /
+# Install Maven
+RUN apt-get update && \
+    apt-get install -y maven && \
+    apt-get clean
 
+WORKDIR /app
+
+# Copy pom.xml and download dependencies first (for caching)
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy the rest of the application source
 COPY src ./src
 
-RUN mvn clean install -DskipTests
+# Package the app (skip tests for faster build)
+RUN mvn clean package -DskipTests
 
-# Use official OpenJDK 21 runtime image (no -jre-slim tag exists)
-FROM openjdk:21-slim
+# Runtime stage: Use slim JRE image
+FROM eclipse-temurin:21-jre
 
-WORKDIR /
+WORKDIR /app
 
-COPY --from=build /app/target/*.jar /app/app.jar
+# Copy the built JAR from the build stage
+COPY --from=build /app/target/*.jar app.jar
 
-CMD ["java", "-jar", "/app/app.jar"]
+# Expose port if needed
+EXPOSE 8080
+
+# Run the Spring Boot app
+ENTRYPOINT ["java", "-jar", "app.jar"]
