@@ -21,13 +21,13 @@ RUN mvn clean package -DskipTests
 # Runtime stage: Use slim JRE image
 FROM eclipse-temurin:21-jre
 
-WORKDIR /app
+WORKDIR /
 
 # Copy the built JAR from the build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /target/*.jar appetite-check-api.jar
 
 # Expose port if needed
 EXPOSE 8080
 
 # Run the Spring Boot app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "appetite-check-api.jar"]
