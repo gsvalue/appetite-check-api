@@ -2,7 +2,7 @@
 FROM maven:3.9.0-openjdk-21 AS build
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /
 
 # Copy the pom.xml and src directory for Maven build
 COPY pom.xml .
@@ -15,10 +15,10 @@ RUN mvn clean package -DskipTests
 FROM openjdk:21-jre-slim
 
 # Set the working directory for the app
-WORKDIR /app
+WORKDIR /
 
 # Copy the compiled JAR file from the build image to the runtime image
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /target/*.jar app.jar
 
 # Expose the port your app is running on
 EXPOSE 8080
