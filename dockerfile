@@ -1,27 +1,33 @@
-# Use official Maven image with JDK 21 for building the project
-FROM maven:3.9.0-openjdk-21 AS build
+# Build stage: Use OpenJDK 21 base image and install Maven manually
+FROM eclipse-temurin:21-jdk AS build
 
-# Set the working directory inside the container
-WORKDIR /app
+# Install Maven
+RUN apt-get update && \
+    apt-get install -y maven && \
+    apt-get clean
 
-# Copy the pom.xml and src directory for Maven build
+WORKDIR /
+
+# Copy pom.xml and download dependencies first (for caching)
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy the rest of the application source
 COPY src ./src
 
-# Run Maven to build the project
+# Package the app (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Use official OpenJDK 21 runtime as a base image for the final runtime
-FROM openjdk:21-jre-slim
+# Runtime stage: Use slim JRE image
+FROM eclipse-temurin:21-jre
 
-# Set the working directory for the app
-WORKDIR /app
+WORKDIR /
 
-# Copy the compiled JAR file from the build image to the runtime image
-COPY --from=build /app/target/*.jar app.jar
+# Copy the built JAR from the build stage
+COPY --from=build /target/*.jar appetite-check-api.jar
 
-# Expose the port your app is running on
+# Expose port if needed
 EXPOSE 8080
 
-# Command to run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the Spring Boot app
+ENTRYPOINT ["java", "-jar", "appetite-check-api.jar"]
